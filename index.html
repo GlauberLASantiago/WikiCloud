@@ -1,1 +1,570 @@
-index
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuvem de Palavras - Wikipedia</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts para os estilos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Poppins:wght@400;600;800&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- WordCloud2.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f4f8;
+        }
+        
+        .loader {
+            border: 4px solid #e2e8f0;
+            border-bottom-color: #ffffff;
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+            width: 24px;
+            height: 24px;
+        }
+
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Ocultar scrollbar mantendo funcionalidade */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 p-4 md:p-8 flex flex-col items-center">
+
+    <div class="max-w-6xl w-full bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row">
+        
+        <!-- Painel de Controles (Esquerda) -->
+        <div class="w-full md:w-1/3 bg-slate-50 p-6 md:p-8 border-r border-slate-200 flex flex-col">
+            <h1 class="text-2xl font-bold mb-2 text-slate-900 flex items-center gap-2">
+                <!-- Ícone da Wikipedia/Livro -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                WikiCloud
+            </h1>
+            <p class="text-sm text-slate-500 mb-8">Digite um termo, nós lemos a Wikipedia e criamos a arte.</p>
+
+            <div class="space-y-6 flex-1">
+                
+                <!-- Seleção de Idioma -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Idioma da Busca</label>
+                    <div class="flex gap-3">
+                        <label class="flex-1 relative flex items-center justify-center p-3 rounded-xl border-2 border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 has-[:checked]:text-blue-700">
+                            <input type="radio" name="lang-select" value="pt" class="sr-only" checked>
+                            <span class="text-xl mr-2">🇧🇷</span>
+                            <span class="block text-sm font-bold">Português</span>
+                        </label>
+
+                        <label class="flex-1 relative flex items-center justify-center p-3 rounded-xl border-2 border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 has-[:checked]:text-blue-700">
+                            <input type="radio" name="lang-select" value="en" class="sr-only">
+                            <span class="text-xl mr-2">🇺🇸</span>
+                            <span class="block text-sm font-bold">Inglês</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Term Input -->
+                <div>
+                    <label for="term-input" class="block text-sm font-semibold text-slate-700 mb-1">Assunto / Termo</label>
+                    <input type="text" id="term-input" placeholder="Ex: Artificial Intelligence" 
+                           class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
+                           required>
+                </div>
+
+                <!-- Seleção de Orientação -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Orientação da Imagem</label>
+                    <div class="flex gap-3">
+                        <label class="flex-1 relative flex items-center justify-center p-2 rounded-xl border-2 border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 has-[:checked]:text-blue-700">
+                            <input type="radio" name="orientation-select" value="landscape" class="sr-only" checked>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2" ry="2"/></svg>
+                            <span class="block text-sm font-bold">Paisagem</span>
+                        </label>
+
+                        <label class="flex-1 relative flex items-center justify-center p-2 rounded-xl border-2 border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 has-[:checked]:text-blue-700">
+                            <input type="radio" name="orientation-select" value="portrait" class="sr-only">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2" ry="2"/></svg>
+                            <span class="block text-sm font-bold">Retrato</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Seleção de Estilo -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Escolha um Estilo</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        
+                        <label class="relative flex items-center p-2 rounded-xl border-2 border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                            <input type="radio" name="style-select" value="vibrant" class="sr-only" checked>
+                            <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-pink-500 via-red-500 to-yellow-500 mr-2 shadow-sm flex-shrink-0"></div>
+                            <span class="block text-xs font-bold text-slate-800">Vibrante</span>
+                        </label>
+
+                        <label class="relative flex items-center p-2 rounded-xl border-2 border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                            <input type="radio" name="style-select" value="neon" class="sr-only">
+                            <div class="w-5 h-5 rounded-full bg-slate-900 mr-2 shadow-sm relative overflow-hidden border border-slate-300 flex-shrink-0">
+                                <div class="absolute inset-0 bg-gradient-to-tr from-cyan-400 to-purple-500 opacity-80"></div>
+                            </div>
+                            <span class="block text-xs font-bold text-slate-800">Neon Dark</span>
+                        </label>
+
+                        <label class="relative flex items-center p-2 rounded-xl border-2 border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                            <input type="radio" name="style-select" value="elegant" class="sr-only">
+                            <div class="w-5 h-5 rounded-full bg-slate-200 mr-2 shadow-sm flex items-center justify-center flex-shrink-0">
+                                <div class="w-2.5 h-2.5 bg-slate-700 rounded-full"></div>
+                            </div>
+                            <span class="block text-xs font-bold text-slate-800">Elegante</span>
+                        </label>
+
+                        <label class="relative flex items-center p-2 rounded-xl border-2 border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                            <input type="radio" name="style-select" value="ocean" class="sr-only">
+                            <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 mr-2 shadow-sm flex-shrink-0"></div>
+                            <span class="block text-xs font-bold text-slate-800">Oceano</span>
+                        </label>
+
+                        <label class="relative flex items-center p-2 rounded-xl border-2 border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                            <input type="radio" name="style-select" value="sunset" class="sr-only">
+                            <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-orange-500 to-purple-600 mr-2 shadow-sm flex-shrink-0"></div>
+                            <span class="block text-xs font-bold text-slate-800">Pôr do Sol</span>
+                        </label>
+
+                        <label class="relative flex items-center p-2 rounded-xl border-2 border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                            <input type="radio" name="style-select" value="forest" class="sr-only">
+                            <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-green-600 to-emerald-400 mr-2 shadow-sm flex-shrink-0"></div>
+                            <span class="block text-xs font-bold text-slate-800">Floresta</span>
+                        </label>
+
+                        <label class="relative flex items-center p-2 rounded-xl border-2 border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                            <input type="radio" name="style-select" value="cyberpunk" class="sr-only">
+                            <div class="w-5 h-5 rounded-full bg-black border border-pink-500 mr-2 shadow-sm flex-shrink-0 relative overflow-hidden">
+                                <div class="absolute inset-0 bg-gradient-to-tr from-transparent to-green-400 opacity-50"></div>
+                            </div>
+                            <span class="block text-xs font-bold text-slate-800">Cyberpunk</span>
+                        </label>
+
+                        <label class="relative flex items-center p-2 rounded-xl border-2 border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                            <input type="radio" name="style-select" value="vintage" class="sr-only">
+                            <div class="w-5 h-5 rounded-full bg-[#fdf6e3] border border-[#b45309] mr-2 shadow-sm flex-shrink-0 flex items-center justify-center">
+                                <div class="w-2 h-2 bg-[#7c2d12] rounded-full"></div>
+                            </div>
+                            <span class="block text-xs font-bold text-slate-800">Vintage</span>
+                        </label>
+
+                    </div>
+                </div>
+
+                <!-- Botão de Ação -->
+                <button id="generate-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex justify-center items-center mt-4">
+                    <span id="btn-text">Gerar Nuvem da Wiki</span>
+                    <span id="btn-loader" class="loader hidden"></span>
+                </button>
+                
+                <!-- Mensagem de Erro/Status -->
+                <div id="status-container" class="hidden mt-4 p-3 rounded-lg text-sm font-medium border">
+                    <p id="status-message" class="text-center"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área da Nuvem (Direita) -->
+        <div class="w-full md:w-2/3 p-4 md:p-8 flex flex-col relative items-center justify-center">
+            <div id="canvas-container" style="aspect-ratio: 16/9; width: 100%;" class="bg-white rounded-2xl relative overflow-hidden border-2 border-dashed border-slate-200 flex items-center justify-center transition-colors duration-500">
+                
+                <!-- Estado Vazio -->
+                <div id="empty-state" class="text-center p-6 text-slate-400 absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>
+                    <p class="text-lg font-medium text-slate-600">Sua nuvem aparecerá aqui</p>
+                    <p class="text-sm mt-1">Busque por um termo ao lado para começar.</p>
+                </div>
+
+                <!-- O Canvas onde a mágica acontece -->
+                <canvas id="cloud-canvas" class="absolute top-0 left-0 w-full h-full opacity-0 transition-opacity duration-700"></canvas>
+            </div>
+            
+            <!-- Botão de Download (Aparece após gerar) -->
+            <button id="download-btn" class="hidden absolute bottom-6 right-6 md:bottom-10 md:right-10 bg-slate-800 hover:bg-slate-900 text-white p-3 rounded-full shadow-xl transition-transform hover:scale-105" title="Baixar Imagem">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Rodapé -->
+    <div class="mt-8 mb-4 text-slate-500 text-sm flex flex-col items-center gap-2 text-center">
+        <p class="flex gap-4 items-center justify-center">
+            <span>Criação visual dinâmica</span>
+            <span class="w-1 h-1 rounded-full bg-slate-400"></span>
+            <span>API Oficial da Wikipedia</span>
+        </p>
+        <div class="mt-3 pt-3 border-t border-slate-200/60 w-full max-w-md">
+            <p class="text-slate-600 mb-1">
+                Desenvolvido pelo professor <strong>Glauber Santiago</strong> — DAC/UFSCar
+            </p>
+            <div class="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-3 text-xs">
+                <a href="https://servidores.ufscar.br/glauber/" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 hover:underline transition-colors">servidores.ufscar.br/glauber/</a>
+                <span class="hidden md:inline text-slate-300">•</span>
+                <a href="https://sites.google.com/view/glauberia" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 hover:underline transition-colors">sites.google.com/view/glauberia</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configurações dos Estilos
+        const STYLES = {
+            vibrant: {
+                backgroundColor: '#ffffff',
+                fontFamily: '"Poppins", sans-serif',
+                colors: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899'],
+                fontWeight: '800'
+            },
+            neon: {
+                backgroundColor: '#0f172a', // slate-900
+                fontFamily: '"Space Mono", monospace',
+                colors: ['#22d3ee', '#c084fc', '#f472b6', '#4ade80', '#fbbf24', '#ffffff'],
+                fontWeight: '700'
+            },
+            elegant: {
+                backgroundColor: '#f8fafc', // slate-50
+                fontFamily: '"Merriweather", serif',
+                colors: ['#1e293b', '#334155', '#475569', '#64748b', '#94a3b8'],
+                fontWeight: '700'
+            },
+            ocean: {
+                backgroundColor: '#f0f9ff',
+                fontFamily: '"Poppins", sans-serif',
+                colors: ['#0369a1', '#0ea5e9', '#38bdf8', '#0284c7', '#0891b2', '#0c4a6e'],
+                fontWeight: '800'
+            },
+            sunset: {
+                backgroundColor: '#2e1065', 
+                fontFamily: '"Poppins", sans-serif',
+                colors: ['#f43f5e', '#f97316', '#fbbf24', '#a855f7', '#ec4899', '#ffffff'],
+                fontWeight: '800'
+            },
+            forest: {
+                backgroundColor: '#fefce8',
+                fontFamily: '"Merriweather", serif',
+                colors: ['#14532d', '#166534', '#15803d', '#4d7c0f', '#854d0e', '#3f6212'],
+                fontWeight: '700'
+            },
+            cyberpunk: {
+                backgroundColor: '#000000',
+                fontFamily: '"Space Mono", monospace',
+                colors: ['#fde047', '#f0abfc', '#22d3ee', '#39ff14', '#ff007f', '#ffffff'],
+                fontWeight: '700'
+            },
+            vintage: {
+                backgroundColor: '#fdf6e3',
+                fontFamily: '"Merriweather", serif',
+                colors: ['#7c2d12', '#9a3412', '#b45309', '#1e3a8a', '#064e3b', '#3f3f46'],
+                fontWeight: '700'
+            }
+        };
+
+        // Stopwords em Português
+        const stopWordsPt = new Set([
+            "a", "o", "as", "os", "um", "uma", "uns", "umas", "de", "do", "da", "dos", "das", 
+            "em", "no", "na", "nos", "nas", "por", "para", "com", "sem", "e", "ou", "mas", 
+            "porém", "que", "se", "como", "mais", "menos", "muito", "pouco", "não", "sim", 
+            "já", "também", "só", "apenas", "ser", "estar", "ter", "ir", "foi", "era", "é", 
+            "são", "sou", "tem", "têm", "isso", "isto", "aquilo", "este", "esta", "esse", "essa",
+            "meu", "minha", "seu", "sua", "nosso", "nossa", "nós", "eles", "elas", "ele", "ela",
+            "quando", "onde", "qual", "quais", "quem", "sobre", "entre", "até", "após", "desde",
+            "pelo", "pela", "pelos", "pelas", "ao", "aos", "à", "às", "logo", "nem", "pois",
+            "você", "vocês", "está", "estão", "neste", "nesta", "nesse", "nessa", "tudo", "todo", 
+            "toda", "suas", "seus", "eram", "sendo", "dos", "das", "aos", "sido", "fazer", "sendo"
+        ]);
+
+        // Stopwords em Inglês
+        const stopWordsEn = new Set([
+            "the", "and", "to", "of", "a", "in", "is", "that", "for", "it", "with", "as", "was",
+            "on", "at", "by", "an", "be", "this", "which", "or", "from", "but", "not", "are", 
+            "were", "all", "we", "when", "your", "can", "said", "there", "use", "each", "she",
+            "do", "how", "their", "if", "will", "up", "other", "about", "out", "many", "then",
+            "them", "these", "so", "some", "her", "would", "make", "like", "him", "into", "time",
+            "has", "look", "two", "more", "write", "go", "see", "number", "no", "way", "could",
+            "people", "my", "than", "first", "water", "been", "call", "who", "oil", "its", "now",
+            "find", "long", "down", "day", "did", "get", "come", "made", "may", "part", "also",
+            "have", "they", "you", "he", "only", "one", "very", "such", "through", "just", "where",
+            "much", "before", "between", "after", "since", "being", "under", "most", "any", "over",
+            "even", "because", "while", "those", "cant", "dont", "i", "its", "had", "can", "has"
+        ]);
+
+        // Elementos da UI
+        const termInput = document.getElementById('term-input');
+        const generateBtn = document.getElementById('generate-btn');
+        const btnText = document.getElementById('btn-text');
+        const btnLoader = document.getElementById('btn-loader');
+        const statusContainer = document.getElementById('status-container');
+        const statusMessage = document.getElementById('status-message');
+        const canvasContainer = document.getElementById('canvas-container');
+        const cloudCanvas = document.getElementById('cloud-canvas');
+        const emptyState = document.getElementById('empty-state');
+        const downloadBtn = document.getElementById('download-btn');
+        const langRadios = document.querySelectorAll('input[name="lang-select"]');
+        const orientationRadios = document.querySelectorAll('input[name="orientation-select"]');
+
+        // Configurar as dimensões baseadas na orientação
+        orientationRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const isPortrait = e.target.value === 'portrait';
+                if (isPortrait) {
+                    canvasContainer.style.aspectRatio = '3/4';
+                    canvasContainer.style.width = '400px';
+                    canvasContainer.style.maxWidth = '100%';
+                } else {
+                    canvasContainer.style.aspectRatio = '16/9';
+                    canvasContainer.style.width = '100%';
+                    canvasContainer.style.maxWidth = '100%';
+                }
+            });
+        });
+
+        // Mudar o placeholder baseado no idioma selecionado para dar a dica
+        langRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if(e.target.value === 'en') {
+                    termInput.placeholder = "Ex: Artificial Intelligence";
+                } else {
+                    termInput.placeholder = "Ex: Inteligência Artificial";
+                }
+            });
+        });
+
+        // Permitir gerar apertando Enter
+        termInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                generateBtn.click();
+            }
+        });
+
+        // Buscar texto na Wikipedia
+        async function fetchWikipediaText(term, lang) {
+            // Usa o subdomínio correto: pt.wikipedia.org ou en.wikipedia.org
+            const apiUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&redirects=1&titles=${encodeURIComponent(term)}&format=json&origin=*`;
+            
+            const response = await fetch(apiUrl);
+            if (!response.ok) throw new Error("Falha ao comunicar com a Wikipedia.");
+            
+            const data = await response.json();
+            const pages = data.query.pages;
+            const pageId = Object.keys(pages)[0];
+            
+            if (pageId === "-1") {
+                const langName = lang === 'pt' ? 'Português' : 'Inglês';
+                throw new Error(`O termo "${term}" não foi encontrado na Wikipedia em ${langName}. Verifique a ortografia.`);
+            }
+            
+            return pages[pageId].extract;
+        }
+
+        // Lógica Principal de Geração
+        generateBtn.addEventListener('click', async () => {
+            const term = termInput.value.trim();
+            const lang = document.querySelector('input[name="lang-select"]:checked').value;
+            const selectedStyle = document.querySelector('input[name="style-select"]:checked').value;
+            
+            if (!term) {
+                showStatus("Por favor, digite um termo para buscar.", "error");
+                return;
+            }
+
+            setLoading(true);
+            downloadBtn.classList.add('hidden');
+            showStatus(`Procurando por "${term}" na Wiki (${lang.toUpperCase()})...`, "info");
+
+            try {
+                const text = await fetchWikipediaText(term, lang);
+
+                if (!text || text.length < 50) {
+                    throw new Error("O artigo encontrado é muito curto para gerar uma nuvem de palavras.");
+                }
+
+                showStatus("Lendo artigo e organizando palavras...", "info");
+                
+                await new Promise(r => setTimeout(r, 200)); // Pequena pausa pra UI
+
+                const words = extractWords(text, lang);
+                
+                if (words.length === 0) {
+                    throw new Error("Não encontramos palavras suficientes neste artigo para criar a arte.");
+                }
+
+                showStatus("Desenhando a sua nuvem...", "info");
+                drawCloud(words, selectedStyle);
+
+            } catch (error) {
+                console.error(error);
+                showStatus(error.message, "error");
+                setLoading(false);
+            }
+        });
+
+        function extractWords(text, lang) {
+            const currentStopWords = lang === 'en' ? stopWordsEn : stopWordsPt;
+
+            // Remove cabeçalhos da wikipedia ex: == History ==
+            const cleanText = text.replace(/=+.*?=+/g, ' '); 
+            
+            // Regex suporta letras normais + acentos portugueses (não faz mal usar o mesmo regex em EN)
+            const wordRegex = /[a-záéíóúâêôãõç]{3,}/gi; 
+            const matches = cleanText.match(wordRegex);
+            
+            if (!matches) return [];
+
+            const wordCounts = {};
+            matches.forEach(w => {
+                const word = w.toLowerCase();
+                // Verifica se não é número puro e não está nas stopwords do idioma selecionado
+                if (isNaN(word) && !currentStopWords.has(word)) {
+                    wordCounts[word] = (wordCounts[word] || 0) + 1;
+                }
+            });
+
+            // Converte para array, ordena pelas mais frequentes e pega o top 150
+            const sortedWords = Object.entries(wordCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 150);
+
+            return sortedWords;
+        }
+
+        function drawCloud(wordList, styleKey) {
+            const config = STYLES[styleKey];
+            
+            // Ajusta dimensões do canvas baseadas no container real
+            const rect = canvasContainer.getBoundingClientRect();
+            const ratio = window.devicePixelRatio || 1;
+            
+            cloudCanvas.width = rect.width * ratio;
+            cloudCanvas.height = rect.height * ratio;
+            cloudCanvas.style.width = `${rect.width}px`;
+            cloudCanvas.style.height = `${rect.height}px`;
+
+            // Altera visual do container baseado no estilo
+            canvasContainer.style.backgroundColor = config.backgroundColor;
+            if (styleKey === 'neon') {
+                canvasContainer.classList.remove('border-slate-200');
+                canvasContainer.classList.add('border-slate-800', 'shadow-inner');
+            } else {
+                canvasContainer.classList.add('border-slate-200');
+                canvasContainer.classList.remove('border-slate-800', 'shadow-inner');
+            }
+
+            emptyState.style.display = 'none';
+            cloudCanvas.style.opacity = '0'; // esconde para o fade in
+
+            // Determina escala baseada no tamanho do quadro para preencher bem a tela
+            const maxFrequence = wordList[0][1];
+            const baseSize = Math.min(rect.width, rect.height) / 7;
+            const scaleFactor = Math.max(baseSize / maxFrequence, 1.5) * ratio; 
+
+            // Função de cor customizada
+            const colorFunc = function() {
+                return config.colors[Math.floor(Math.random() * config.colors.length)];
+            };
+
+            // Evento disparado quando a renderização termina
+            cloudCanvas.addEventListener('wordcloudstop', function onStop() {
+                cloudCanvas.removeEventListener('wordcloudstop', onStop);
+                cloudCanvas.style.opacity = '1';
+                setLoading(false);
+                showStatus("Prontinho! Arte finalizada.", "success");
+                downloadBtn.classList.remove('hidden'); 
+                
+                setTimeout(() => { 
+                    if(statusContainer.classList.contains('bg-green-50')) {
+                        statusContainer.classList.add('hidden'); 
+                    }
+                }, 4000);
+            });
+
+            // Limpar e preparar o fundo do canvas real para garantir o Download correto
+            const ctx = cloudCanvas.getContext('2d');
+            ctx.clearRect(0, 0, cloudCanvas.width, cloudCanvas.height);
+
+            if(styleKey === 'neon') {
+                ctx.fillStyle = config.backgroundColor;
+                ctx.fillRect(0, 0, cloudCanvas.width, cloudCanvas.height);
+            } else if (styleKey === 'elegant') {
+                ctx.fillStyle = config.backgroundColor;
+                ctx.fillRect(0, 0, cloudCanvas.width, cloudCanvas.height);
+            } else {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, cloudCanvas.width, cloudCanvas.height);
+            }
+
+            // Inicia o processo de desenho
+            WordCloud(cloudCanvas, {
+                list: wordList,
+                fontFamily: config.fontFamily,
+                fontWeight: config.fontWeight,
+                color: colorFunc,
+                backgroundColor: 'transparent',
+                minSize: 6 * ratio,
+                weightFactor: function (size) {
+                    return size * scaleFactor;
+                },
+                gridSize: Math.max(8, Math.round(16 * rect.width / 1024)) * ratio,
+                rotateRatio: 0.25, // 25% de chance da palavra virar na vertical
+                rotationSteps: 2,
+                shape: 'circle',
+                drawOutOfBound: false,
+                shrinkToFit: true
+            });
+        }
+
+        // Função para baixar a imagem
+        downloadBtn.addEventListener('click', () => {
+            const url = cloudCanvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            const termo = termInput.value.trim().toLowerCase().replace(/\s+/g, '-');
+            const lang = document.querySelector('input[name="lang-select"]:checked').value;
+            link.download = `nuvem-wiki-${lang}-${termo}.png`;
+            link.href = url;
+            link.click();
+        });
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                btnText.classList.add('hidden');
+                btnLoader.classList.remove('hidden');
+                generateBtn.disabled = true;
+                generateBtn.classList.add('opacity-80', 'cursor-not-allowed');
+            } else {
+                btnText.classList.remove('hidden');
+                btnLoader.classList.add('hidden');
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('opacity-80', 'cursor-not-allowed');
+            }
+        }
+
+        function showStatus(text, type) {
+            statusMessage.textContent = text;
+            statusContainer.className = 'mt-4 p-3 rounded-xl text-sm font-medium border block transition-all';
+            
+            if (type === 'error') {
+                statusContainer.classList.add('bg-red-50', 'border-red-200', 'text-red-600');
+            } else if (type === 'success') {
+                statusContainer.classList.add('bg-green-50', 'border-green-200', 'text-green-600');
+            } else {
+                statusContainer.classList.add('bg-blue-50', 'border-blue-200', 'text-blue-600');
+            }
+        }
+    </script>
+</body>
+</html>
