@@ -10,7 +10,7 @@ O WikiCloud conecta-se diretamente à API oficial da Wikipedia para extrair arti
 
 🌐 Bilíngue: Suporte completo para buscas na Wikipedia em Português e Inglês, com filtros de stopwords otimizados para ambos os idiomas.
 
-🎨 8 Temas Visuais: Escolha entre uma paleta de estilos criados cuidadosamente (Vibrante, Neon Dark, Elegante, Oceano, Pôr do Sol, Floresta, Cyberpunk e Vintage).
+🎨 23 Temas Visuais: Escolha entre uma paleta de estilos criados cuidadosamente (Vibrante, Neon Dark, Elegante, Oceano, Pôr do Sol, Floresta, Cyberpunk Vintage, Aurora, Algodão Doce, Meia-Noite, Lava, Menta, Lavanda, Deserto, Ártico, Matrix, Retrô 80s, Café, Sakura, Monocromático, Galáxia e Lousa).
 
 📐 Controle de Orientação: Gere imagens nos formatos Paisagem (16:9) ou Retrato (3:4) - perfeito para telas de computador, celulares ou para impressão.
 
